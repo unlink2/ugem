@@ -1,0 +1,30 @@
+.\" Manpage for ugem.
+.\" Contact lukas@krickl.dev to correct errors or typos.
+
+.TH man 8 "21 August 2023" "0.0.1" "ugem manual"
+
+.SH NAME
+  ugem
+.SH SYNOPSIS
+  ugem [-v] [--help] [--version]
+.SH DESCRIPTION
+  ugem
+
+  --help                    
+    display this help and exit
+  --version                 
+    display version info and exit
+  -v, --verbose             
+    verbose output
+  
+.SH EXAMPLES
+ 
+.SH SEE ALSO
+
+.SH BUGS
+
+.SH AUTHOR
+  Lukas Krickl (lukas@krickl.dev)
+
+.SH COPYRIGHT
+  Copyright 2023 Lukas Krickl (lukas@krickl.dev)
