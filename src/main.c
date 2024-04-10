@@ -8,7 +8,7 @@
 #define UGEM_VER "0.0.1"
 
 // args without value
-#define UGEM_OPTS "hvV"
+#define UGEM_OPTS "hvV46"
 
 // args with value e.g. o:
 #define UGEM_OPTS_ARG ""
@@ -17,10 +17,12 @@
 
 void ugem_help(void) {
   printf("%s\n", UGEM_NAME);
-  printf("Usage %s [%s]\n\n", UGEM_NAME, UGEM_OPTS);
+  printf("Usage %s [%s] [root directory]\n\n", UGEM_NAME, UGEM_OPTS);
   UGEM_HELP("h", "display this help and exit");
   UGEM_HELP("V", "display version info and exit");
   UGEM_HELP("v", "verbose output");
+  UGEM_HELP("4", "Use IPv4");
+  UGEM_HELP("6", "Use IPv6");
 }
 
 void ugem_version(void) { printf("%s version %s\n", UGEM_NAME, UGEM_VER); }
