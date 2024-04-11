@@ -30,6 +30,8 @@ extern FILE *ugemerr;
 
 struct ugem {
   int server_listening;
+
+  int server_fd;
 };
 
 struct ugem_config {

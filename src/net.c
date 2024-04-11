@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/socket.h>
 #include "ugem.h"
+#include <fcntl.h>
 
 int ugem_net_server_socket_init(int port, sa_family_t family) {
   int s = -1;
