@@ -74,6 +74,10 @@ int ugem_main(struct ugem_config cfg) {
     return -1;
   }
 
+  if (UGEM_SHOULD_LOG(UGEM_INFO)) {
+    fprintf(ugemerr, "Listening on port %d\n", ugemcfg.port);
+  }
+
   while (ugem.server_listening) {
   }
 

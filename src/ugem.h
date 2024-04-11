@@ -14,6 +14,16 @@
 #define UGEM_DEFAULT_PORT 1965;
 #define UGEM_DEFAULT_SA_FAMILY AF_INET
 
+#define UGEM_SHOULD_LOG(level) (ugemcfg.verbose >= (level))
+
+enum UGEM_LOG_LEVEL {
+  UGEM_CRITICAL = 0,
+  UGEM_ERROR = 1,
+  UGEM_WARNING = 2,
+  UGEM_INFO = 3,
+  UGEM_DEBUG = 4
+};
+
 extern FILE *ugemin;
 extern FILE *ugemout;
 extern FILE *ugemerr;
