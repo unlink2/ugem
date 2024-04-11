@@ -3,11 +3,13 @@
 
 #include <arpa/inet.h>
 
-int ugem_net_socket_init(int port, sa_family_t family);
-int ugem_net_socket_close(int socket);
+int ugem_net_server_socket_init(int port, sa_family_t family);
+void ugem_net_socket_close(int socket);
 
-void* ugem_connection_init(void);
+// init a secure connection and return
+// a context to the connection 
+void* ugem_net_secure_ctx_init(void);
 
-int ugem_connection_free(void);
+void ugem_net_secure_ctx_free(void *ctx);
 
 #endif 

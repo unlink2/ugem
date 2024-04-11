@@ -5,8 +5,8 @@ CC=gcc
 DBGCFLAGS=-g -fsanitize=address
 DBGLDFLAGS=-fsanitize=address 
 CFLAGS=-I$(IDIR) -Wall -pedantic $(DBGCFLAGS) -std=gnu99
-LIBS=
-TEST_LIBS=
+LIBS=-lssl -lcrypto
+TEST_LIBS=-D=UGEM_TEST
 LDFLAGS=$(DBGLDFLAGS) $(LIBS)
 
 TAG_LIBS=/usr/include/unistd.h /usr/include/stdio.h /usr/include/stdlib.h /usr/include/assert.h /usr/include/errno.h /usr/include/ctype.h

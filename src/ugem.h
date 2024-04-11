@@ -4,14 +4,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
+
+#define UGEM_ENV_KEY "UGEM_KEY"
+#define UGEM_ENV_CERT "URGME_CERT"
+#define UGEM_DEFAULT_KEY "./server.key"
+#define UGEM_DEFAULT_CERT "./server.cert"
+
+#define UGEM_DEFAULT_PORT 1965;
+#define UGEM_DEFAULT_SA_FAMILY AF_INET
 
 extern FILE *ugemin;
 extern FILE *ugemout;
 extern FILE *ugemerr;
 
 struct ugem {
-  // TODO: remplace me
-  int state;
+  int server_listening;
 };
 
 struct ugem_config {
@@ -19,6 +27,12 @@ struct ugem_config {
   int argc;
 
   int verbose;
+
+  const char *key_path;
+  const char *cert_path;
+
+  int port;
+  sa_family_t sa_family;
 };
 
 extern struct ugem ugem;
