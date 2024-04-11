@@ -12,4 +12,16 @@ void* ugem_net_secure_ctx_init(void);
 
 void ugem_net_secure_ctx_free(void *ctx);
 
+// establish a connection context from an fd and the 
+// secure connection context
+void* ugem_net_secure_handshake(void *ctx, int fd);
+
+void ugem_net_secure_disconnect(void *connection, int fd);
+
+// writes data to the socket represented by ctx
+// returns <= 0 on error or the amount of bytest written
+long ugem_net_secure_write(void *connection, const char *data, unsigned long len);
+
+long ugem_net_secure_read(void *connection, char *buf, unsigned long max);
+
 #endif 
