@@ -16,6 +16,10 @@
 
 #define UGEM_SHOULD_LOG(level) (ugemcfg.verbose >= (level))
 
+#define ugem_malloc(size) malloc((size))
+#define ugem_calloc(n, size) calloc(n, size)
+#define ugem_free(ptr) free(ptr)
+
 enum UGEM_LOG_LEVEL {
   UGEM_CRITICAL = 0,
   UGEM_ERROR = 1,
