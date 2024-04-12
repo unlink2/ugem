@@ -27,3 +27,12 @@ This program is distributed under the terms of the MIT License.
 
 ## Contributing
 
+## TODO
+
+- Allow serving a directory
+- Prevent any use of '..' in urls 
+- Allow regex based path matching for things like mapping error codes or rewriting to another file 
+- Generate a default / file that is just the index of the served directory 
+- Allow rewriting that / to a file
+- Option to include hidden files in the index
+- Option to allow multiple root directories based on host name
