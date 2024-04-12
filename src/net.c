@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include "ugem.h"
 #include <fcntl.h>
+#include <ctype.h>
 
 int ugem_net_server_socket_init(int port, sa_family_t family) {
   int s = -1;
@@ -36,7 +37,6 @@ int ugem_net_server_socket_init(int port, sa_family_t family) {
     return -1;
   }
 
-
   // int flags = fcntl(s, F_GETFL);
   // fcntl(s, F_SETFL, flags | O_NONBLOCK);
   if (UGEM_SHOULD_LOG(UGEM_DEBUG)) {
@@ -46,12 +46,13 @@ int ugem_net_server_socket_init(int port, sa_family_t family) {
   return s;
 }
 
-void ugem_net_socket_close(int socket) { 
+void ugem_net_socket_close(int socket) {
   if (UGEM_SHOULD_LOG(UGEM_DEBUG)) {
     fprintf(ugemerr, "Closing socket %d\n", socket);
   }
 
-  close(socket); }
+  close(socket);
+}
 
 #ifdef UGEM_TEST
 
@@ -131,8 +132,18 @@ void ugem_net_secure_disconnect(void *connection, int fd) {
 long ugem_net_secure_read(void *connection, char *buf, unsigned long max) {
   long read = SSL_read(connection, buf, (int)max);
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    fprintf(ugemerr, "Read %ld bytest\n", read);
+    fprintf(ugemerr, "Read %ld bytest '", read);
+
+    for (int i = 0; i < read; i++) {
+      if (isprint(buf[i])) {
+        fputc(buf[i], ugemerr);
+      } else {
+        fputc('?', ugemerr);
+      }
+    }
+    fprintf(ugemerr, "'\n");
   }
+
   return read;
 }
 
