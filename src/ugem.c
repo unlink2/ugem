@@ -54,6 +54,9 @@ struct ugem_config ugem_cfg_init(void) {
 void ugem_sig_handler(int signo) {
   if (signo == SIGINT) {
     ugem.server_listening = 0;
+    
+    // we connect to the server socket 
+    ugem_net_socket_close(ugem.server_fd);
     exit(0);
   }
 }

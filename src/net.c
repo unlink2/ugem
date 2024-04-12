@@ -16,6 +16,8 @@ int ugem_net_server_socket_init(int port, sa_family_t family) {
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   s = socket(family, SOCK_STREAM, 0);
+  int option = 1;
+  setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
   if (s < 0) {
     fprintf(ugemerr, "Socket creation failed: %s\n", strerror(errno));
@@ -34,10 +36,22 @@ int ugem_net_server_socket_init(int port, sa_family_t family) {
     return -1;
   }
 
+
+  // int flags = fcntl(s, F_GETFL);
+  // fcntl(s, F_SETFL, flags | O_NONBLOCK);
+  if (UGEM_SHOULD_LOG(UGEM_DEBUG)) {
+    fprintf(ugemerr, "Opened socket %d\n", s);
+  }
+
   return s;
 }
 
-void ugem_net_socket_close(int socket) { close(socket); }
+void ugem_net_socket_close(int socket) { 
+  if (UGEM_SHOULD_LOG(UGEM_DEBUG)) {
+    fprintf(ugemerr, "Closing socket %d\n", socket);
+  }
+
+  close(socket); }
 
 #ifdef UGEM_TEST
 
