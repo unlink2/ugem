@@ -22,7 +22,7 @@ TEST_BNAME=testugem
 BIN_INSTALL_DIR=/usr/local/bin
 MAN_INSTALL_DIR=/usr/local/man
 
-_OBJ = $(MAIN) ugem.o net.o
+_OBJ = $(MAIN) ugem.o net.o uri.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 all: bin test
