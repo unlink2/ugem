@@ -138,7 +138,7 @@ long ugem_net_secure_read(void *connection, char *buf, unsigned long max) {
       if (isprint(buf[i])) {
         fputc(buf[i], ugemerr);
       } else {
-        fputc('?', ugemerr);
+        fprintf(ugemerr, "\\x%02x", (char)buf[i]);
       }
     }
     fprintf(ugemerr, "'\n");
