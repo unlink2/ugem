@@ -21,6 +21,10 @@ void url_unescape(void) {
   TESTBEGIN("url unescape");
   assert_url_unescape("test", 0, "test");
   assert_url_unescape("test with spaces", 0, "test%20with%20spaces");
+  assert_url_unescape("", 12, "failedescape%");
+  assert_url_unescape("", 12, "failedescape%1");
+  assert_url_unescape("", 12, "failedescape%1Z");
+  assert_url_unescape("", 12, "failedescape%Z1");
   TESTEND("url unescape");
 }
 

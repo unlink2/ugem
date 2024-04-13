@@ -25,6 +25,9 @@ int ugem_uri_reserved(int c) {
 }
 
 unsigned long ugem_uri_unescape(char *dst, const char *src, unsigned long n) {
+  if (n == 0) {
+    return 0;
+  }
   const char uri_escape_char = '%';
 
   unsigned long writeat = 0;
@@ -57,7 +60,7 @@ unsigned long ugem_uri_unescape(char *dst, const char *src, unsigned long n) {
   return 0;
 
 fail:
-
+  dst[0] = '\0';
   return readat;
 }
 
