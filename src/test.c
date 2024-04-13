@@ -45,11 +45,66 @@ void tok_until(void) {
   TESTEND("tokuntil");
 }
 
+void print_uri(struct ugem_uri *uri) {
+  printf("%s://%s:%d/%s", uri->scheme, uri->host, uri->port, uri->path);
+
+  if (uri->fragment) {
+    printf("#%s", uri->fragment);
+  }
+
+  if (uri->query_len > 0 && uri->query) {
+    puts("?");
+  }
+
+  for (int i = 0; i < uri->query_len && uri->query; i++) {
+    printf("%s=%s", uri->query[i].key, uri->query[i].value);
+  }
+}
+
+#define assert_uri_parse(expect, src)                                          \
+  {                                                                            \
+    struct ugem_uri ret = ugem_uri_parse(src, 123, strlen(src));               \
+    printf("%s: expect: '", src);                                               \
+    print_uri(&(expect));                                                      \
+    printf("' got: '");                                                          \
+    print_uri(&ret);                                                           \
+    printf("'\n");                                                              \
+    assert((expect).err == ret.err);                                           \
+    assert((expect).port == ret.port);                                         \
+    assert((expect).query_len == ret.query_len);                               \
+    assert(strcmp((expect).scheme, ret.scheme) == 0);                          \
+    assert(strcmp((expect).host, ret.host) == 0);                              \
+    assert(strcmp((expect).path, ret.path) == 0);                              \
+    assert(strcmp((expect).fragment, ret.fragment) == 0);                      \
+    for (int i = 0; i < (expect).query_len; i++) {                             \
+      assert(strcmp((expect).query[i].key, ret.query[i].key) == 0);            \
+      assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);        \
+    }                                                                          \
+    ugem_uri_free(&ret);                                                       \
+  }
+
+void uri_parse(void) {
+  TESTBEGIN("uti parse");
+
+  struct ugem_uri uri1 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = ""};
+  assert_uri_parse(uri1, "gemini://test.local/");
+
+  TESTEND("uri parse");
+}
+
 int main(int arc, char **argv) {
+  struct ugem_config cfg = ugem_cfg_init();
+  ugem_init(cfg);
+
   TESTBEGIN("ugem");
 
   url_unescape();
   tok_until();
+  uri_parse();
 
   TESTEND("ugem");
 

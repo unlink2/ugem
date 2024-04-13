@@ -3,9 +3,9 @@
 #include <ctype.h>
 
 unsigned long ugem_tok_until(const char *src, char until,
-                             enum ugem_tok_flags flags, unsigned int n) {
+                             enum ugem_tok_flags flags, long n) {
   unsigned long read = 0;
-  if (n == 0) {
+  if (n <= 0) {
     return 0;
   }
 
@@ -19,8 +19,15 @@ unsigned long ugem_tok_until(const char *src, char until,
   return read;
 }
 
-struct ugem_uri ugem_uri_parse(const char *uri_str, unsigned long n) {
-  unsigned long readat = 0;
+char *ugem_strndup(const char *src, unsigned long n) {
+  char *dst = ugem_malloc(n + 1);
+  strncpy(dst, src, n);
+  dst[n] = '\0';
+  return dst;
+}
+
+struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
+  long readat = 0;
   struct ugem_uri uri = {.err = 1};
   if (n == 0) {
     fprintf(ugemerr, "Attempting to parse an uri of length 0\n");
@@ -28,6 +35,17 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, unsigned long n) {
   }
 
   // scheme:
+  {
+    unsigned int len = ugem_tok_until(uri_str+readat, ':', 0, n-readat);
+    if (len == 0) {
+      fprintf(ugemerr, "Unabel to parse uri scheme of '%s'\n", uri_str);
+      return uri;
+    }
+
+    uri.scheme = ugem_strndup(uri_str + readat, len);
+    readat += len + 1;
+  }
+  
 
   // consume //
 
@@ -70,7 +88,7 @@ int ugem_uri_reserved(int c) {
   return 0;
 }
 
-unsigned long ugem_uri_unescape(char *dst, const char *src, unsigned long n) {
+unsigned long ugem_uri_unescape(char *dst, const char *src, long n) {
   if (n == 0) {
     return 0;
   }
