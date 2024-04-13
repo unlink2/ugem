@@ -33,7 +33,7 @@ unsigned long ugem_uri_unescape(char *dst, const char *src, unsigned long n) {
   for (readat = 0; readat < n; readat++) {
     char c = src[readat];
     if (c == uri_escape_char) {
-      if (readat + 3 < n) {
+      if (readat + 3 >= n) {
         goto fail;
       }
 
