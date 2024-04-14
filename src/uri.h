@@ -9,17 +9,17 @@ struct ugem_query {
 struct ugem_uri {
   int err;
 
-  const char *scheme;
-  const char *host;
+  char *scheme;
+  char *host;
 
   int port;
 
-  const char *path;
+  char *path;
 
   struct ugem_query *query;
   unsigned long query_len;
 
-  const char *fragment;
+  char *fragment;
 };
 
 // parse a url and return a struct containing all of its components

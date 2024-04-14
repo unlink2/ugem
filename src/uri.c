@@ -105,10 +105,17 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
     uri.path = ugem_strndup("", 0);
     goto finish;
   }
-
+  
+  // consume the / 
+  UGEM_URI_PARSE_ADV(1);
   {
-    // path string 
+    // path string
     unsigned int path_len = ugem_tok_until(uri_str, '?', UGEM_TOK_OR_END, n);
+
+    if (path_len == 0) {
+      uri.path = ugem_strndup("", 0);
+      goto finish;
+    }
   }
 
   // if / get path
@@ -128,6 +135,17 @@ finish:
 
 fail:
   return uri;
+}
+
+void ugem_uri_free(struct ugem_uri *uri) {
+  if (uri->path) {
+    ugem_free(uri->path);
+  }
+
+  ugem_free(uri->scheme);
+  ugem_free(uri->host);
+
+  // TODO: free rest of data
 }
 
 #undef UGEM_URI_PARSE_ADV
@@ -188,4 +206,3 @@ fail:
 
 const char *ugem_uri_escape(const char *src, unsigned long n) {}
 
-void ugem_uri_free(struct ugem_uri *uri) {}
