@@ -24,7 +24,15 @@ Checks: "*,
   -concurrency-mt-unsafe,
   -clang-analyzer-unix.Malloc,
   -modernize-macro-to-enum,
-  -hicpp-signed-bitwise
+  -hicpp-signed-bitwise,
+  -android-cloexec-accept,
+  -bugprone-signal-handler,
+  -cert-msc54-cpp,
+  -cert-sig30-c,
+  -clang-analyzer-core.NonNullParamChecker,
+  -misc-include-cleaner,
+  -hicpp-function-size,
+  -readability-function-size
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

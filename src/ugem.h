@@ -1,9 +1,7 @@
 #ifndef UGEM_H__
 #define UGEM_H__
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/socket.h>
 
 #define UGEM_ENV_KEY "UGEM_KEY"

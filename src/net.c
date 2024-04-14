@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/socket.h>
 #include "ugem.h"
 #include <fcntl.h>
@@ -66,7 +65,7 @@ void *ugem_net_secure_handshake(void *ctx, int fd) { return NULL; }
 
 void ugem_net_secure_disconnect(void *connection, int fd) {}
 
-long ugem_net_secure_write(void *ctx, const char *data, unsigned long len) {
+long ugem_net_secure_write(void *connection, const char *data, unsigned long len) {
   return 0;
 }
 

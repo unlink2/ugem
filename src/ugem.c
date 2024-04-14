@@ -2,8 +2,10 @@
 #include "net.h"
 #include <signal.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 FILE *ugemin = NULL;
 FILE *ugemout = NULL;
@@ -54,8 +56,8 @@ struct ugem_config ugem_cfg_init(void) {
 void ugem_sig_handler(int signo) {
   if (signo == SIGINT) {
     ugem.server_listening = 0;
-    
-    // we connect to the server socket 
+
+    // we connect to the server socket
     ugem_net_socket_close(ugem.server_fd);
     exit(0);
   }
@@ -115,7 +117,8 @@ int ugem_main(struct ugem_config cfg) {
       goto disconnect;
     }
 
-    const char *test = "20 text/gemini\r\n# Hello world\r\nThis is a test message!\r\n";
+    const char *test =
+        "20 text/gemini\r\n# Hello world\r\nThis is a test message!\r\n";
 
     if (ugem_net_secure_write(connection, test, strlen(test)) <= 0) {
       fprintf(ugemerr, "Write failed!\n");

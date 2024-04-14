@@ -2,7 +2,6 @@
 #include <string.h>
 #include <assert.h>
 #include "ugem.h"
-#include "net.h"
 #include "uri.h"
 
 #define TESTBEGIN(name) printf("[test '%s']\n", (name));
@@ -13,7 +12,7 @@
     char buf[1024];                                                            \
     int ret = ugem_uri_unescape(buf, escaped, strlen(escaped));                \
     printf("%s: rc = '%d' unescaped = '%s'\n", escaped, ret, buf);             \
-    assert(ret == expect_ret);                                                 \
+    assert(ret == (expect_ret));                                               \
     assert(strcmp(buf, expect) == 0);                                          \
   }
 

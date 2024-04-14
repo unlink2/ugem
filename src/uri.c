@@ -1,6 +1,10 @@
 #include "uri.h"
 #include "ugem.h"
+#include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 unsigned long ugem_tok_until(const char *src, char until,
                              enum ugem_tok_flags flags, long n) {
