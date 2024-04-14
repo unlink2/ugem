@@ -101,6 +101,15 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
   }
 
   // optional / at the end
+  if (uri_str[0] != '/') {
+    uri.path = ugem_strndup("", 0);
+    goto finish;
+  }
+
+  {
+    // path string 
+    unsigned int path_len = ugem_tok_until(uri_str, '?', UGEM_TOK_OR_END, n);
+  }
 
   // if / get path
 
@@ -113,6 +122,7 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
   // if ? get key=value
   // repeat until end is not &
 
+finish:
   uri.err = 0;
   return uri;
 
