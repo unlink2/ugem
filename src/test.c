@@ -51,7 +51,7 @@ void tok_until(void) {
 }
 
 void print_uri(struct ugem_uri *uri) {
-  printf("%s://%s:%d/", uri->scheme, uri->host, uri->port);
+  printf("error: %d -> %s://%s:%d/", uri->err, uri->scheme, uri->host, uri->port);
 
   if (uri->path) {
     printf("%s", uri->path);
