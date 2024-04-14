@@ -18,6 +18,7 @@
 
 #define ugem_malloc(size) malloc((size))
 #define ugem_calloc(n, size) calloc(n, size)
+#define ugem_realloc(ptr, n) realloc(ptr, n)
 #define ugem_free(ptr) free(ptr)
 
 enum UGEM_LOG_LEVEL {

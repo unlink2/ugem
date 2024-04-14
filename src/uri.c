@@ -154,16 +154,79 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
   }
 
   // optional ?
+  if (uri_str[0] != '?') {
+    goto finish;
+  }
 
+  // consume ?
+  UGEM_URI_PARSE_ADV(1);
   // if ? get key=value
   // repeat until end is not &
+  do {
+    // consume & if its at the start
+    if (uri_str[0] == '&') {
+      UGEM_URI_PARSE_ADV(1);
+    }
 
-  if (n != 0) {
-    fprintf(ugemerr, "Trailing tokens in %s: %ld bytes remaining\n", start_uri, n);
+    unsigned int kv_pair_len = ugem_tok_until(uri_str, '&', UGEM_TOK_OR_END, n);
+
+    if (kv_pair_len == 0) {
+      break;
+    }
+
+    uri.query_len += 1;
+    void *new_query =
+        ugem_realloc(uri.query, sizeof(*uri.query) * uri.query_len);
+    if (new_query == NULL) {
+      fprintf(ugemerr, "Allocation of query failed!\n");
+      goto fail;
+    }
+    uri.query = new_query;
+
+    struct ugem_query *kv = &uri.query[uri.query_len - 1];
+    kv->key = NULL;
+    kv->value = NULL;
+
+    // get key
+    unsigned int key_len =
+        ugem_tok_until(uri_str, '=', UGEM_TOK_OR_END, kv_pair_len);
+
+    kv->key = ugem_malloc(key_len + 1);
+    unsigned int key_rc = ugem_uri_unescape(kv->key, uri_str, key_len);
+    if (key_rc) {
+      fprintf(ugemerr, "Unescaping key failed in uri: %s\n", start_uri);
+      goto fail;
+    }
+
+    // key + =
+    UGEM_URI_PARSE_ADV(key_len);
+    if (uri_str[0] == '=') {
+      UGEM_URI_PARSE_ADV(1);
+      // get value
+      unsigned int value_len =
+          ugem_tok_until(uri_str, '&', UGEM_TOK_OR_END, kv_pair_len);
+      if (value_len > 0) {
+
+        kv->value = ugem_malloc(value_len + 1);
+        unsigned int value_rc =
+            ugem_uri_unescape(kv->value, uri_str, value_len);
+        if (value_rc) {
+          fprintf(ugemerr, "Unescaping value failed in uri: %s\n", start_uri);
+          goto fail;
+        }
+        UGEM_URI_PARSE_ADV(value_len);
+      }
+    }
+
+  } while (n > 0 && uri_str[0] == '&');
+
+finish:
+  if (n > 0) {
+    fprintf(ugemerr, "Trailing tokens in %s: %ld bytes remaining\n", start_uri,
+            n);
     goto fail;
   }
 
-finish:
   uri.err = 0;
   return uri;
 
@@ -172,18 +235,19 @@ fail:
 }
 
 void ugem_uri_free(struct ugem_uri *uri) {
-  if (uri->path) {
-    ugem_free(uri->path);
-  }
-
-  if (uri->fragment) {
-    ugem_free(uri->fragment);
-  }
-
+  ugem_free(uri->path);
+  ugem_free(uri->fragment);
   ugem_free(uri->scheme);
   ugem_free(uri->host);
 
-  // TODO: free rest of data
+  for (int i = 0; i < uri->query_len; i++) {
+    ugem_free(uri->query[i].key);
+    ugem_free(uri->query[i].value);
+  }
+
+  if (uri->query) {
+    ugem_free(uri->query);
+  }
 }
 
 #undef UGEM_URI_PARSE_ADV

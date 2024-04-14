@@ -62,11 +62,14 @@ void print_uri(struct ugem_uri *uri) {
   }
 
   if (uri->query_len > 0 && uri->query) {
-    puts("?");
+    printf("?");
   }
 
   for (int i = 0; i < uri->query_len && uri->query; i++) {
     printf("%s=%s", uri->query[i].key, uri->query[i].value);
+    if (i + 1 < uri->query_len) {
+      printf("&");
+    }
   }
 }
 
@@ -91,7 +94,9 @@ void print_uri(struct ugem_uri *uri) {
     }                                                                          \
     for (int i = 0; i < (expect).query_len; i++) {                             \
       assert(strcmp((expect).query[i].key, ret.query[i].key) == 0);            \
-      assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);        \
+      if ((expect).query[i].value || ret.query[i].value) {                       \
+        assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);      \
+      }                                                                        \
     }                                                                          \
     ugem_uri_free(&ret);                                                       \
   }
@@ -99,6 +104,7 @@ void print_uri(struct ugem_uri *uri) {
 void uri_parse(void) {
   TESTBEGIN("uti parse");
 
+  // no file paht but /
   struct ugem_uri uri1 = {.err = 0,
                           .scheme = "gemini",
                           .host = "test.local",
@@ -106,6 +112,15 @@ void uri_parse(void) {
                           .path = ""};
   assert_uri_parse(uri1, "gemini://test.local/");
 
+  // no /
+  struct ugem_uri uri6 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = ""};
+  assert_uri_parse(uri6, "gemini://test.local");
+
+  // file path
   struct ugem_uri uri2 = {.err = 0,
                           .scheme = "gemini",
                           .host = "test.local",
@@ -113,6 +128,7 @@ void uri_parse(void) {
                           .path = "file/path/1"};
   assert_uri_parse(uri2, "gemini://test.local/file/path/1");
 
+  // file path with space
   struct ugem_uri uri3 = {.err = 0,
                           .scheme = "gemini",
                           .host = "test.local",
@@ -120,6 +136,7 @@ void uri_parse(void) {
                           .path = "file path/1"};
   assert_uri_parse(uri3, "gemini://test.local/file%20path/1");
 
+  // fragment
   struct ugem_uri uri4 = {.err = 0,
                           .scheme = "gemini",
                           .host = "test.local",
@@ -128,13 +145,66 @@ void uri_parse(void) {
                           .fragment = "fragment"};
   assert_uri_parse(uri4, "gemini://test.local/file/path/1#fragment");
 
+  // fragment with spaces
   struct ugem_uri uri5 = {.err = 0,
                           .scheme = "gemini",
                           .host = "test.local",
                           .port = 123,
                           .path = "file/path/1",
                           .fragment = "fragment with space"};
-  assert_uri_parse(uri5, "gemini://test.local/file/path/1#fragment%20with%20space");
+  assert_uri_parse(uri5,
+                   "gemini://test.local/file/path/1#fragment%20with%20space");
+
+  // key=value
+  struct ugem_query query7[] = {{.key = "key1", .value = "value1"}};
+  struct ugem_uri uri7 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .query = query7,
+                          .query_len = 1};
+  assert_uri_parse(uri7, "gemini://test.local/file/path/1?key1=value1");
+
+  struct ugem_query query8[] = {{.key = "key1", .value = "value1"},
+                                {.key = "key2", .value = "value2"}};
+  struct ugem_uri uri8 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .query = query8,
+                          .query_len = 2};
+  assert_uri_parse(uri8,
+                   "gemini://test.local/file/path/1?key1=value1&key2=value2");
+
+  struct ugem_query query9[] = {{.key = "key1", .value = NULL},
+                                {.key = "key2", .value = NULL}};
+  struct ugem_uri uri9 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .query = query9,
+                          .query_len = 2};
+  assert_uri_parse(uri9, "gemini://test.local/file/path/1?key1&key2=");
+
+  struct ugem_uri uri10 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .query_len = 0};
+  assert_uri_parse(uri10, "gemini://test.local/file/path/1?");
+
+  // unexpected end
+  struct ugem_uri uri11= {.err = 1,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .fragment = NULL};
+  assert_uri_parse(uri11, "gemini://test.local/file/path/1#");
 
   TESTEND("uri parse");
 }

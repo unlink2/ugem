@@ -2,8 +2,8 @@
 #define URI_H_
 
 struct ugem_query {
-  const char *key;
-  const char *value;
+  char *key;
+  char *value;
 };
 
 struct ugem_uri {
