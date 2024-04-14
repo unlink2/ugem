@@ -51,7 +51,8 @@ void tok_until(void) {
 }
 
 void print_uri(struct ugem_uri *uri) {
-  printf("error: %d -> %s://%s:%d/", uri->err, uri->scheme, uri->host, uri->port);
+  printf("error: %d -> %s://%s:%d/", uri->err, uri->scheme, uri->host,
+         uri->port);
 
   if (uri->path) {
     printf("%s", uri->path);
@@ -82,20 +83,22 @@ void print_uri(struct ugem_uri *uri) {
     print_uri(&ret);                                                           \
     printf("'\n");                                                             \
     assert((expect).err == ret.err);                                           \
-    assert((expect).port == ret.port);                                         \
-    assert((expect).query_len == ret.query_len);                               \
-    assert(strcmp((expect).scheme, ret.scheme) == 0);                          \
-    assert(strcmp((expect).host, ret.host) == 0);                              \
-    if ((expect).path || ret.path) {                                           \
-      assert(strcmp((expect).path, ret.path) == 0);                            \
-    }                                                                          \
-    if ((expect).fragment || ret.fragment) {                                   \
-      assert(strcmp((expect).fragment, ret.fragment) == 0);                    \
-    }                                                                          \
-    for (int i = 0; i < (expect).query_len; i++) {                             \
-      assert(strcmp((expect).query[i].key, ret.query[i].key) == 0);            \
-      if ((expect).query[i].value || ret.query[i].value) {                       \
-        assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);      \
+    if ((expect).err == 0) {                                                   \
+      assert((expect).port == ret.port);                                       \
+      assert((expect).query_len == ret.query_len);                             \
+      assert(strcmp((expect).scheme, ret.scheme) == 0);                        \
+      assert(strcmp((expect).host, ret.host) == 0);                            \
+      if ((expect).path || ret.path) {                                         \
+        assert(strcmp((expect).path, ret.path) == 0);                          \
+      }                                                                        \
+      if ((expect).fragment || ret.fragment) {                                 \
+        assert(strcmp((expect).fragment, ret.fragment) == 0);                  \
+      }                                                                        \
+      for (int i = 0; i < (expect).query_len; i++) {                           \
+        assert(strcmp((expect).query[i].key, ret.query[i].key) == 0);          \
+        if ((expect).query[i].value || ret.query[i].value) {                   \
+          assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);    \
+        }                                                                      \
       }                                                                        \
     }                                                                          \
     ugem_uri_free(&ret);                                                       \
@@ -190,21 +193,27 @@ void uri_parse(void) {
   assert_uri_parse(uri9, "gemini://test.local/file/path/1?key1&key2=");
 
   struct ugem_uri uri10 = {.err = 0,
-                          .scheme = "gemini",
-                          .host = "test.local",
-                          .port = 123,
-                          .path = "file/path/1",
-                          .query_len = 0};
+                           .scheme = "gemini",
+                           .host = "test.local",
+                           .port = 123,
+                           .path = "file/path/1",
+                           .query_len = 0};
   assert_uri_parse(uri10, "gemini://test.local/file/path/1?");
 
+  /**
+   * Errors
+   */
+
   // unexpected end
-  struct ugem_uri uri11= {.err = 1,
-                          .scheme = "gemini",
-                          .host = "test.local",
-                          .port = 123,
-                          .path = "file/path/1",
-                          .fragment = NULL};
-  assert_uri_parse(uri11, "gemini://test.local/file/path/1#");
+  struct ugem_uri urierr = {.err = 1};
+  assert_uri_parse(urierr, "gemini://test.local/file/path/1#");
+  assert_uri_parse(urierr, "");
+  assert_uri_parse(urierr, "gemini");
+  assert_uri_parse(urierr, "gemini:");
+  assert_uri_parse(urierr, "gemini://");
+  assert_uri_parse(urierr, "gemini:///");
+  assert_uri_parse(urierr, "gemini://test.local/path#");
+  assert_uri_parse(urierr, "gemini://test.local/path?=");
 
   TESTEND("uri parse");
 }

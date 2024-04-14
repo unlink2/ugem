@@ -68,7 +68,7 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
         ugem_tok_until(uri_str, '/', UGEM_TOK_OR_END, n);
 
     if (hostport_len == 0) {
-      fprintf(ugemerr, "Uri does not conta a host: %s\n", start_uri);
+      fprintf(ugemerr, "Uri does not contain a host: %s\n", start_uri);
       goto fail;
     }
 
@@ -190,6 +190,11 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
     // get key
     unsigned int key_len =
         ugem_tok_until(uri_str, '=', UGEM_TOK_OR_END, kv_pair_len);
+    
+    if (key_len == 0) {
+      fprintf(ugemerr, "A key length of 0 is not permitted in uri: %s\n", start_uri);
+      goto fail;
+    }
 
     kv->key = ugem_malloc(key_len + 1);
     unsigned int key_rc = ugem_uri_unescape(kv->key, uri_str, key_len);
