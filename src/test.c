@@ -29,8 +29,11 @@ void url_unescape(void) {
 }
 
 #define assert_tok_until(expect, src, until, flags)                            \
+  assert_tok_until_n(expect, src, until, flags, strlen(src))
+
+#define assert_tok_until_n(expect, src, until, flags, n)                       \
   {                                                                            \
-    int ret = ugem_tok_until(src, until, flags, strlen(src));                  \
+    int ret = ugem_tok_until(src, until, flags, n);                            \
     printf("%s: expect: %d parsed %d\n", src, expect, ret);                    \
     assert((expect) == ret);                                                   \
   }
@@ -41,12 +44,18 @@ void tok_until(void) {
   assert_tok_until(4, "test:123", ':', 0);
   assert_tok_until(0, "test", ':', 0);
   assert_tok_until(4, "test", ':', UGEM_TOK_OR_END);
+  assert_tok_until_n(0, "test", ':', 0, strlen("test") - 1);
+  assert_tok_until_n(3, "test", ':', UGEM_TOK_OR_END, strlen("test") - 1);
 
   TESTEND("tokuntil");
 }
 
 void print_uri(struct ugem_uri *uri) {
-  printf("%s://%s:%d/%s", uri->scheme, uri->host, uri->port, uri->path);
+  printf("%s://%s:%d/", uri->scheme, uri->host, uri->port);
+
+  if (uri->path) {
+    printf("%s", uri->path);
+  }
 
   if (uri->fragment) {
     printf("#%s", uri->fragment);
@@ -64,18 +73,20 @@ void print_uri(struct ugem_uri *uri) {
 #define assert_uri_parse(expect, src)                                          \
   {                                                                            \
     struct ugem_uri ret = ugem_uri_parse(src, 123, strlen(src));               \
-    printf("%s: expect: '", src);                                               \
+    printf("%s: expect: '", src);                                              \
     print_uri(&(expect));                                                      \
-    printf("' got: '");                                                          \
+    printf("' got: '");                                                        \
     print_uri(&ret);                                                           \
-    printf("'\n");                                                              \
+    printf("'\n");                                                             \
     assert((expect).err == ret.err);                                           \
     assert((expect).port == ret.port);                                         \
     assert((expect).query_len == ret.query_len);                               \
     assert(strcmp((expect).scheme, ret.scheme) == 0);                          \
     assert(strcmp((expect).host, ret.host) == 0);                              \
-    assert(strcmp((expect).path, ret.path) == 0);                              \
-    assert(strcmp((expect).fragment, ret.fragment) == 0);                      \
+    if ((expect).path || ret.path) {                                             \
+      assert(strcmp((expect).path, ret.path) == 0);                            \
+    }                                                                          \
+    if ((expect).fragment || ret.fragment) { assert(strcmp((expect).fragment, ret.fragment) == 0);                     } \
     for (int i = 0; i < (expect).query_len; i++) {                             \
       assert(strcmp((expect).query[i].key, ret.query[i].key) == 0);            \
       assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);        \
