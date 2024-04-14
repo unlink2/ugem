@@ -83,10 +83,12 @@ void print_uri(struct ugem_uri *uri) {
     assert((expect).query_len == ret.query_len);                               \
     assert(strcmp((expect).scheme, ret.scheme) == 0);                          \
     assert(strcmp((expect).host, ret.host) == 0);                              \
-    if ((expect).path || ret.path) {                                             \
+    if ((expect).path || ret.path) {                                           \
       assert(strcmp((expect).path, ret.path) == 0);                            \
     }                                                                          \
-    if ((expect).fragment || ret.fragment) { assert(strcmp((expect).fragment, ret.fragment) == 0);                     } \
+    if ((expect).fragment || ret.fragment) {                                   \
+      assert(strcmp((expect).fragment, ret.fragment) == 0);                    \
+    }                                                                          \
     for (int i = 0; i < (expect).query_len; i++) {                             \
       assert(strcmp((expect).query[i].key, ret.query[i].key) == 0);            \
       assert(strcmp((expect).query[i].value, ret.query[i].value) == 0);        \
@@ -103,6 +105,36 @@ void uri_parse(void) {
                           .port = 123,
                           .path = ""};
   assert_uri_parse(uri1, "gemini://test.local/");
+
+  struct ugem_uri uri2 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1"};
+  assert_uri_parse(uri2, "gemini://test.local/file/path/1");
+
+  struct ugem_uri uri3 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file path/1"};
+  assert_uri_parse(uri3, "gemini://test.local/file%20path/1");
+
+  struct ugem_uri uri4 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .fragment = "fragment"};
+  assert_uri_parse(uri4, "gemini://test.local/file/path/1#fragment");
+
+  struct ugem_uri uri5 = {.err = 0,
+                          .scheme = "gemini",
+                          .host = "test.local",
+                          .port = 123,
+                          .path = "file/path/1",
+                          .fragment = "fragment with space"};
+  assert_uri_parse(uri5, "gemini://test.local/file/path/1#fragment%20with%20space");
 
   TESTEND("uri parse");
 }

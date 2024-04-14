@@ -84,8 +84,8 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
       uri.host = ugem_strndup(uri_str, host_len);
       UGEM_URI_PARSE_ADV(host_len);
 
-      unsigned int port_len = hostport_len - host_len;
-      if (port_len == 0 || port_len > 32) {
+      int port_len = (int)hostport_len - (int)host_len;
+      if (port_len <= 0 || port_len > 32) {
         fprintf(ugemerr, "Uri does not contain port after : was seen: %s:\n",
                 start_uri);
         goto fail;
@@ -105,29 +105,63 @@ struct ugem_uri ugem_uri_parse(const char *uri_str, int default_port, long n) {
     uri.path = ugem_strndup("", 0);
     goto finish;
   }
-  
-  // consume the / 
+
+  // consume the /
   UGEM_URI_PARSE_ADV(1);
   {
     // path string
-    unsigned int path_len = ugem_tok_until(uri_str, '?', UGEM_TOK_OR_END, n);
+    unsigned int pathfrag_len =
+        ugem_tok_until(uri_str, '?', UGEM_TOK_OR_END, n);
 
-    if (path_len == 0) {
+    if (pathfrag_len == 0) {
       uri.path = ugem_strndup("", 0);
       goto finish;
     }
+
+    // optional # for fragment
+    unsigned int path_len = ugem_tok_until(uri_str, '#', 0, pathfrag_len);
+    if (path_len == 0) {
+      // we only have a path without a fragment
+      path_len = pathfrag_len;
+    }
+
+    uri.path = ugem_malloc(path_len + 1);
+    unsigned long path_res = ugem_uri_unescape(uri.path, uri_str, path_len);
+    if (path_res) {
+      fprintf(ugemerr, "Failed to unescape path in %s\n", start_uri);
+      goto fail;
+    }
+
+    UGEM_URI_PARSE_ADV(path_len);
+
+    int frag_len = (int)pathfrag_len - (int)path_len - 1;
+
+    // if # get fragment
+    if (frag_len > 0) {
+      // consume #
+      UGEM_URI_PARSE_ADV(1);
+      uri.fragment = ugem_malloc(frag_len + 1);
+
+      unsigned long frag_res =
+          ugem_uri_unescape(uri.fragment, uri_str, frag_len);
+      if (frag_res) {
+        fprintf(ugemerr, "Failed to unescape fragment in %s\n", start_uri);
+        goto fail;
+      }
+
+      UGEM_URI_PARSE_ADV(frag_len);
+    }
   }
-
-  // if / get path
-
-  // optional #
-
-  // if # get fragment
 
   // optional ?
 
   // if ? get key=value
   // repeat until end is not &
+
+  if (n != 0) {
+    fprintf(ugemerr, "Trailing tokens in %s: %ld bytes remaining\n", start_uri, n);
+    goto fail;
+  }
 
 finish:
   uri.err = 0;
@@ -140,6 +174,10 @@ fail:
 void ugem_uri_free(struct ugem_uri *uri) {
   if (uri->path) {
     ugem_free(uri->path);
+  }
+
+  if (uri->fragment) {
+    ugem_free(uri->fragment);
   }
 
   ugem_free(uri->scheme);
@@ -205,4 +243,3 @@ fail:
 }
 
 const char *ugem_uri_escape(const char *src, unsigned long n) {}
-
