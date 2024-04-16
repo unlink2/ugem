@@ -52,6 +52,11 @@ struct ugem_config ugem_cfg_init(void) {
   // TODO: env for sa family
   cfg.sa_family = UGEM_DEFAULT_SA_FAMILY;
 
+  cfg.hostcfg.root_path = getenv(UGEM_ENV_ROOT_DIR);
+  if (!cfg.hostcfg.root_path) {
+    cfg.hostcfg.root_path = UGEM_DEFAULT_ROOT_DIR;
+  }
+
   return cfg;
 }
 
@@ -98,15 +103,20 @@ const char *ugem_status_tostr(enum ugem_status status) {
 }
 
 void ugem_print_payload(FILE *f, const char *buf, long read) {
-  if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    for (int i = 0; i < read; i++) {
-      if (isprint(buf[i])) {
-        fputc(buf[i], ugemerr);
-      } else {
-        fprintf(ugemerr, "\\x%02x", (char)buf[i]);
-      }
+  for (int i = 0; i < read; i++) {
+    if (isprint(buf[i])) {
+      fputc(buf[i], ugemerr);
+    } else {
+      fprintf(ugemerr, "\\x%02x", (char)buf[i]);
     }
   }
+}
+
+// checks if path can be used
+// or if it at any point contains .. that
+// maye lead to escaping the root directory
+int ugem_is_path_valid(const char *path, unsigned long n) {
+  return strstr(path, "../") == NULL; 
 }
 
 enum ugem_status ugem_handle(void *connection, struct ugem_request request,
@@ -119,11 +129,18 @@ enum ugem_status ugem_handle(void *connection, struct ugem_request request,
     goto fail;
   }
 
+  if (!ugem_is_path_valid(uri.path, strlen(uri.path))) {
+    status = UGEM_FAIL_BAD_REQUEST;
+    goto fail;
+  }
+
 fail:
-  fprintf(ugemerr, "request '");
-  ugem_print_payload(ugemerr, request.payload, request.payload_len);
-  fprintf(ugemerr, "' from %s:%d returned with status %s\n", request.src_addr,
-          request.src_port, ugem_status_tostr(status));
+  if (UGEM_SHOULD_LOG(UGEM_INFO)) {
+    fprintf(ugemerr, "request '");
+    ugem_print_payload(ugemerr, request.payload, request.payload_len);
+    fprintf(ugemerr, "' from %s:%d returned with status %s\n", request.src_addr,
+            request.src_port, ugem_status_tostr(status));
+  }
   return status;
 }
 

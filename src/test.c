@@ -217,6 +217,27 @@ void uri_parse(void) {
   TESTEND("uri parse");
 }
 
+#define assert_path_valid(expect, p) {\
+  int res = ugem_is_path_valid((p),  strlen(p)) == (expect);\
+  printf("%s: expected %d got %d\n", (p), (expect), res); \
+  assert(res == (expect)); \
+}
+
+void validate_path(void) {
+  TESTBEGIN("validate path")
+    
+  assert_path_valid(1, "test/path/that/is/valid");
+  assert_path_valid(1, "test/path/that/.is/valid");
+  assert_path_valid(1, ".test/path/that/is/valid");
+  assert_path_valid(1, "test/path/that/is/valid.");
+  assert_path_valid(1, "test/path/that/is/..valid");
+  assert_path_valid(0, "../test/path/that/is/valid");
+
+  assert_path_valid(0, "/test/path/that/is/valid/..");
+
+  TESTEND("validate path");
+}
+
 int main(int arc, char **argv) {
   struct ugem_config cfg = ugem_cfg_init();
   ugem_init(cfg);
@@ -226,6 +247,7 @@ int main(int arc, char **argv) {
   url_unescape();
   tok_until();
   uri_parse();
+  validate_path();
 
   TESTEND("ugem");
 

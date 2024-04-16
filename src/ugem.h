@@ -6,8 +6,11 @@
 
 #define UGEM_ENV_KEY "UGEM_KEY"
 #define UGEM_ENV_CERT "URGME_CERT"
+#define UGEM_ENV_ROOT_DIR "UGEM_ROOT_DIR"
+
 #define UGEM_DEFAULT_KEY "./server.key"
 #define UGEM_DEFAULT_CERT "./server.cert"
+#define UGEM_DEFAULT_ROOT_DIR "."
 
 #define UGEM_DEFAULT_PORT 1965;
 #define UGEM_DEFAULT_SA_FAMILY AF_INET
@@ -94,6 +97,7 @@ extern struct ugem_config ugemcfg;
 
 void ugem_init(struct ugem_config cfg);
 void ugem_print_payload(FILE *f, const char *buf, long read);
+int ugem_is_path_valid(const char *path, unsigned long n);
 
 struct ugem_config ugem_cfg_init(void);
 
