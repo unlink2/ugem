@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include "ugem.h"
 #include <fcntl.h>
-#include <ctype.h>
 
 int ugem_net_server_socket_init(int port, sa_family_t family) {
   int s = -1;
@@ -65,7 +64,8 @@ void *ugem_net_secure_handshake(void *ctx, int fd) { return NULL; }
 
 void ugem_net_secure_disconnect(void *connection, int fd) {}
 
-long ugem_net_secure_write(void *connection, const char *data, unsigned long len) {
+long ugem_net_secure_write(void *connection, const char *data,
+                           unsigned long len) {
   return 0;
 }
 
@@ -130,27 +130,12 @@ void ugem_net_secure_disconnect(void *connection, int fd) {
 
 long ugem_net_secure_read(void *connection, char *buf, unsigned long max) {
   long read = SSL_read(connection, buf, (int)max);
-  if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    fprintf(ugemerr, "Read %ld bytest '", read);
-
-    for (int i = 0; i < read; i++) {
-      if (isprint(buf[i])) {
-        fputc(buf[i], ugemerr);
-      } else {
-        fprintf(ugemerr, "\\x%02x", (char)buf[i]);
-      }
-    }
-    fprintf(ugemerr, "'\n");
-  }
 
   return read;
 }
 
 long ugem_net_secure_write(void *connection, const char *data,
                            unsigned long len) {
-  if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    fprintf(ugemerr, "Writing %ld bytest\n", len);
-  }
   return SSL_write(connection, data, (int)len);
 }
 

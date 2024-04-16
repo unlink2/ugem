@@ -1,4 +1,5 @@
 #include "ugem.h"
+#include "uri.h"
 #include "net.h"
 #include <signal.h>
 #include <unistd.h>
@@ -6,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 FILE *ugemin = NULL;
 FILE *ugemout = NULL;
@@ -63,6 +65,68 @@ void ugem_sig_handler(int signo) {
   }
 }
 
+const char *ugem_status_tostr(enum ugem_status status) {
+  switch (status) {
+  case UGEM_INPUT:
+    return "INPUT";
+  case UGEM_INPUT_SENSITIVE:
+    return "SENSITIVE INPUT";
+  case UGEM_SUCCESS:
+    return "SUCCESS";
+  case UGEM_REDIRECT_TEMP:
+    return "TEMPORARY REDIRECT";
+  case UGEM_REDIRECT_PERM:
+    return "PERMANENT REDIRECT";
+  case UGEM_TMP_FAIL_UNSPECIFIED:
+    return "TEMPORARY FAILURE";
+  case UGEM_TMP_FAIL_SERVER_UNAVAIL:
+    return "SERVER UNAVAILABLE";
+  case UGEM_TMP_FAIL_CGI_ERR:
+    return "CGI ERROR";
+  case UGEM_TMP_FAIL_SLOW_DOWN:
+    return "SLOW DOWN";
+  case UGEM_CERT_REQUIRED:
+    return "CERTIFICATE REQUIRED";
+  case UGEM_CERT_NOT_AUTH:
+    return "UNAUTHORIZED";
+  case UGEM_CERT_INVALID:
+    return "CERTIFICATE INVALID";
+  default:
+    return "unknown";
+  }
+  return "unknown";
+}
+
+void ugem_print_payload(FILE *f, const char *buf, long read) {
+  if (UGEM_SHOULD_LOG(UGEM_INFO)) {
+    for (int i = 0; i < read; i++) {
+      if (isprint(buf[i])) {
+        fputc(buf[i], ugemerr);
+      } else {
+        fprintf(ugemerr, "\\x%02x", (char)buf[i]);
+      }
+    }
+  }
+}
+
+enum ugem_status ugem_handle(void *connection, struct ugem_request request,
+                             struct ugem_host_config *hostcfg) {
+  enum ugem_status status = UGEM_TMP_FAIL_UNSPECIFIED;
+  struct ugem_uri uri =
+      ugem_uri_parse(request.payload, ugemcfg.port, request.payload_len);
+  if (hostcfg->host != NULL && strcmp(uri.host, hostcfg->host) != 0) {
+    status = UGEM_FAIL_BAD_REQUEST;
+    goto fail;
+  }
+
+fail:
+  fprintf(ugemerr, "request '");
+  ugem_print_payload(ugemerr, request.payload, request.payload_len);
+  fprintf(ugemerr, "' from %s:%d returned with status %s\n", request.src_addr,
+          request.src_port, ugem_status_tostr(status));
+  return status;
+}
+
 int ugem_main(struct ugem_config cfg) {
   ugem_init(cfg);
 
@@ -83,7 +147,8 @@ int ugem_main(struct ugem_config cfg) {
   }
 
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    fprintf(ugemerr, "Listening on port %d\n", ugemcfg.port);
+    fprintf(ugemerr, "Listening on port %d for host: %s\n", ugemcfg.port,
+            ugemcfg.hostcfg.host);
   }
 
   char buf[4096];
@@ -120,8 +185,15 @@ int ugem_main(struct ugem_config cfg) {
     const char *test =
         "20 text/gemini\r\n# Hello world\r\nThis is a test message!\r\n";
 
+    struct ugem_request request = {.payload = buf,
+                                   .payload_len = read,
+                                   .src_addr = saddr,
+                                   .src_port = addr.sin_port};
+    ugem_handle(connection, request, &ugemcfg.hostcfg);
+
     if (ugem_net_secure_write(connection, test, strlen(test)) <= 0) {
-      fprintf(ugemerr, "Write failed!\n");
+      fprintf(ugemerr, "%s:%d : Write failed!\n", request.src_addr,
+              request.src_port);
     }
 
   disconnect:

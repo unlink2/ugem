@@ -19,6 +19,7 @@ void ugem_help(void) {
   printf("Usage %s [%s] [root directory]\n\n", UGEM_NAME, UGEM_OPTS);
   UGEM_HELP("h", "display this help and exit");
   UGEM_HELP("V", "display version info and exit");
+  UGEM_HELP("H", "Set accepted host");
   UGEM_HELP("v", "increase log level");
   UGEM_HELP("4", "Use IPv4");
   UGEM_HELP("6", "Use IPv6");
@@ -38,6 +39,8 @@ void ugem_getopt(int argc, char **argv, struct ugem_config *cfg) {
       ugem_version();
       exit(0);
       break;
+    case 'H':
+      cfg->hostcfg.host = optarg;
     case 'v':
       cfg->verbose++;
       break;
