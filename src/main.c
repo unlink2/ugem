@@ -7,10 +7,10 @@
 #define UGEM_VER "0.0.1"
 
 // args without value
-#define UGEM_OPTS "hvV46Ha"
+#define UGEM_OPTS "hvV46a"
 
 // args with value e.g. o:
-#define UGEM_OPTS_ARG ""
+#define UGEM_OPTS_ARG "H:"
 
 #define UGEM_HELP(a, desc) printf("\t-%s\t%s\n", (a), desc);
 
@@ -68,6 +68,10 @@ int main(int argc, char **argv) {
   struct ugem_config cfg = ugem_cfg_init();
 
   ugem_getopt(argc, argv, &cfg);
+
+  if (cfg.argc > 0) {
+    cfg.hostcfg.root_path = cfg.argv[0];
+  }
 
   int res = ugem_main(cfg);
 

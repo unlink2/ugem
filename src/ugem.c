@@ -325,8 +325,8 @@ int ugem_main(struct ugem_config cfg) {
   }
 
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    ugem_log(ugemerr, "Listening on port %d for host: %s\n", ugemcfg.port,
-             ugemcfg.hostcfg.host);
+    ugem_log(ugemerr, "Listening on port %d for host: %s serving %s\n", ugemcfg.port,
+             ugemcfg.hostcfg.host, ugemcfg.hostcfg.root_path);
   }
 
   char buf[UGEM_NET_BUF_MAX];
