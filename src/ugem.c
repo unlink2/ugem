@@ -184,9 +184,15 @@ enum ugem_status ugem_handle_dirindex(void *connection,
   ugem_write_status(connection, request, status, UGEM_TEXT_GEMINI, -1);
 
   const char *index_of = "# Index of ";
+  const char *index = "# Index";
+  unsigned long path_len = strlen(uri->path);
 
+  if (path_len == 0) {
+  ugem_net_secure_write(connection, index, strlen(index));
+  } else {
   ugem_net_secure_write(connection, index_of, strlen(index_of));
-  ugem_net_secure_write(connection, uri->path, strlen(uri->path));
+  ugem_net_secure_write(connection, uri->path, path_len);
+  }
   ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF));
 
   while ((ep = readdir(dp)) != NULL) {
