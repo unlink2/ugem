@@ -26,6 +26,18 @@
 #define ugem_realloc(ptr, n) realloc(ptr, n)
 #define ugem_free(ptr) free(ptr)
 
+#define ugem_log(f, ...)                                                       \
+  {                                                                            \
+    char buf[128];                                                             \
+    time_t rawtime = 0;                                                        \
+    struct tm *timeinfo = NULL;                                                \
+    time(&rawtime);                                                            \
+    timeinfo = localtime(&rawtime);                                            \
+    strftime(buf, sizeof(buf), "%c", timeinfo);                                \
+    fprintf((f), "<%s> ", buf);                                                \
+    fprintf((f), __VA_ARGS__);                                                 \
+  }
+
 enum UGEM_LOG_LEVEL {
   UGEM_CRITICAL = 0,
   UGEM_ERROR = 1,
@@ -42,6 +54,7 @@ struct ugem {
   int server_listening;
 
   int server_fd;
+  int next_trace;
 };
 
 struct ugem_host_config {
@@ -55,6 +68,8 @@ struct ugem_request {
 
   const char *src_addr;
   int src_port;
+
+  int trace;
 };
 
 enum ugem_status {
@@ -109,9 +124,12 @@ void ugem_print_payload(FILE *f, const char *buf, long read);
 // a path may not end in /..
 int ugem_is_path_valid(const char *path, unsigned long n);
 
-// joins 2 paths into dst. 
-// dst must be n bytest long 
-int ugem_path_join(char *dst, const char *p1, const char *p2, char sep, unsigned long n);
+// joins 2 paths into dst.
+// dst must be n bytest long
+int ugem_path_join(char *dst, const char *p1, const char *p2, char sep,
+                   unsigned long n);
+
+int ugem_gettrace(void);
 
 struct ugem_config ugem_cfg_init(void);
 

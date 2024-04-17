@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 FILE *ugemin = NULL;
 FILE *ugemout = NULL;
@@ -90,6 +91,14 @@ const char *ugem_status_tostr(enum ugem_status status) {
     return "CGI ERROR";
   case UGEM_TMP_FAIL_SLOW_DOWN:
     return "SLOW DOWN";
+  case UGEM_FAIL_NOT_FOUND:
+    return "NOT FOUND";
+  case UGEM_FAIL_GONE:
+    return "GONE";
+  case UGEM_FAIL_PROXY_REFUSED:
+    return "PROXY REFUSED";
+  case UGEM_FAIL_BAD_REQUEST:
+    return "BAD REQUEST";
   case UGEM_CERT_REQUIRED:
     return "CERTIFICATE REQUIRED";
   case UGEM_CERT_NOT_AUTH:
@@ -125,36 +134,53 @@ int ugem_path_join(char *dst, const char *p1, const char *p2, char sep,
   return snprintf(dst, n, "%s%c%s", p1, sep, p2);
 }
 
+// handles routing rules
+// returns 0 if no rule has been matched
+// in which case the default rule (serve from file system) should apply
+int ugem_handle_rules(void *connection, struct ugem_uri *uri,
+                      struct ugem_host_config *hostcfg) {
+  return 0;
+}
+
 enum ugem_status ugem_handle(void *connection, struct ugem_request request,
                              struct ugem_host_config *hostcfg) {
   enum ugem_status status = UGEM_TMP_FAIL_UNSPECIFIED;
   struct ugem_uri uri =
       ugem_uri_parse(request.payload, ugemcfg.port, request.payload_len);
+
+  // validate we are getting a request for the correct host!
   if (hostcfg->host != NULL && strcmp(uri.host, hostcfg->host) != 0) {
+    ugem_log(ugemerr, "%d: incorrect host in request\n", request.trace);
     status = UGEM_FAIL_BAD_REQUEST;
     goto fail;
   }
 
   if (!ugem_is_path_valid(uri.path, strlen(uri.path))) {
+    ugem_log(ugemerr, "%d: bad request path\n", request.trace);
     status = UGEM_FAIL_BAD_REQUEST;
     goto fail;
   }
 
 fail:
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    fprintf(ugemerr, "request '");
+    ugem_log(ugemerr, "%d: request '", request.trace);
     ugem_print_payload(ugemerr, request.payload, request.payload_len);
     fprintf(ugemerr, "' from %s:%d returned with status %s\n", request.src_addr,
             request.src_port, ugem_status_tostr(status));
   }
+
+  ugem_uri_free(&uri);
+
   return status;
 }
+
+int ugem_gettrace(void) { return ugem.next_trace++; }
 
 int ugem_main(struct ugem_config cfg) {
   ugem_init(cfg);
 
   if (signal(SIGINT, ugem_sig_handler) == SIG_ERR) {
-    fprintf(ugemerr, "Unable to catch SIGINT\n");
+    ugem_log(ugemerr, "Unable to catch SIGINT\n");
     return -1;
   }
 
@@ -170,7 +196,7 @@ int ugem_main(struct ugem_config cfg) {
   }
 
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    fprintf(ugemerr, "Listening on port %d for host: %s\n", ugemcfg.port,
+    ugem_log(ugemerr, "Listening on port %d for host: %s\n", ugemcfg.port,
             ugemcfg.hostcfg.host);
   }
 
@@ -186,8 +212,10 @@ int ugem_main(struct ugem_config cfg) {
     }
     const char *saddr = inet_ntoa(addr.sin_addr);
 
+    int trace = ugem_gettrace();
+
     if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-      fprintf(ugemerr, "%s connected\n", saddr);
+      ugem_log(ugemerr, "%d: %s connected\n", trace, saddr);
     }
 
     void *connection = ugem_net_secure_handshake(server_secure_ctx, client_fd);
@@ -201,7 +229,7 @@ int ugem_main(struct ugem_config cfg) {
     if (read == 0) {
       goto disconnect;
     } else if (read < 0) {
-      fprintf(ugemerr, "Read returned %ld\n", read);
+      ugem_log(ugemerr, "Read returned %ld\n", read);
       goto disconnect;
     }
 
@@ -211,11 +239,12 @@ int ugem_main(struct ugem_config cfg) {
     struct ugem_request request = {.payload = buf,
                                    .payload_len = read,
                                    .src_addr = saddr,
-                                   .src_port = addr.sin_port};
+                                   .src_port = addr.sin_port,
+                                   .trace = trace};
     ugem_handle(connection, request, &ugemcfg.hostcfg);
 
     if (ugem_net_secure_write(connection, test, strlen(test)) <= 0) {
-      fprintf(ugemerr, "%s:%d : Write failed!\n", request.src_addr,
+      ugem_log(ugemerr, "%s:%d : Write failed!\n", request.src_addr,
               request.src_port);
     }
 
@@ -223,7 +252,7 @@ int ugem_main(struct ugem_config cfg) {
 
     ugem_net_secure_disconnect(connection, client_fd);
     if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-      fprintf(ugemerr, "%s disconnected\n", saddr);
+      ugem_log(ugemerr, "%d: %s disconnected\n", trace, saddr);
     }
   }
 
