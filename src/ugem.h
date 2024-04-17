@@ -8,6 +8,8 @@
 #define UGEM_NET_BUF_MAX 2048
 #define UGEM_PATH_SEP '/'
 
+#define UGEM_GEMINI_LF "\r\n"
+
 #define UGEM_ENV_KEY "UGEM_KEY"
 #define UGEM_ENV_CERT "URGME_CERT"
 #define UGEM_ENV_ROOT_DIR "UGEM_ROOT_DIR"

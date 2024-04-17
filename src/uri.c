@@ -316,4 +316,6 @@ fail:
   return readat;
 }
 
-const char *ugem_uri_escape(const char *src, unsigned long n) {}
+const char *ugem_uri_escape(const char *src, unsigned long n) {
+  return NULL;
+}

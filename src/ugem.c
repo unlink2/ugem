@@ -9,6 +9,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 FILE *ugemin = NULL;
 FILE *ugemout = NULL;
@@ -129,37 +131,83 @@ int ugem_is_path_valid(const char *path, unsigned long n) {
                     (n < 3 || strncmp(path + n - 3, "/..", 3) != 0));
 }
 
+int ugem_isdir(const char *path) {
+  struct stat s;
+  stat(path, &s);
+  return S_ISDIR(s.st_mode);
+}
+
 int ugem_path_join(char *dst, const char *p1, const char *p2, char sep,
                    unsigned long n) {
   return snprintf(dst, n, "%s%c%s", p1, sep, p2);
 }
 
-// handles routing rules
-// returns 0 if no rule has been matched
-// in which case the default rule (serve from file system) should apply
-int ugem_handle_rules(void *connection, struct ugem_uri *uri,
-                      struct ugem_host_config *hostcfg) {
-  return 0;
+void ugem_write_status(void *connection, struct ugem_request *request,
+                       enum ugem_status status, const char *meta,
+                       long meta_len) {
+  if (meta_len < 0) {
+    meta_len = (long)strlen(meta);
+  }
+
+  char status_buf[10];
+  snprintf(status_buf, 10, "%d ", status);
+  unsigned long status_buf_len = strnlen(status_buf, 10);
+
+  if (ugem_net_secure_write(connection, status_buf, status_buf_len) <= 0 ||
+      ugem_net_secure_write(connection, meta, meta_len) <= 0 ||
+      ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF)) <= 0) {
+    ugem_log(ugemerr, "%d: %s:%d : Write failed!\n", request->trace,
+             request->src_addr, request->src_port);
+  } else {
+    ugem_log(ugemerr, "%d wrote header: %s%s\n", request->trace, status_buf,
+             meta);
+  }
 }
 
 enum ugem_status ugem_handle(void *connection, struct ugem_request request,
                              struct ugem_host_config *hostcfg) {
+  char path_buf[UGEM_PATH_MAX] = {0};
+
   enum ugem_status status = UGEM_TMP_FAIL_UNSPECIFIED;
   struct ugem_uri uri =
       ugem_uri_parse(request.payload, ugemcfg.port, request.payload_len);
+
+  if (uri.err) {
+    status = UGEM_FAIL_BAD_REQUEST;
+    ugem_write_status(connection, &request, status, "Bad url", -1);
+    goto fail;
+  }
 
   // validate we are getting a request for the correct host!
   if (hostcfg->host != NULL && strcmp(uri.host, hostcfg->host) != 0) {
     ugem_log(ugemerr, "%d: incorrect host in request\n", request.trace);
     status = UGEM_FAIL_BAD_REQUEST;
+    ugem_write_status(connection, &request, status, "Bad host", -1);
     goto fail;
   }
 
   if (!ugem_is_path_valid(uri.path, strlen(uri.path))) {
     ugem_log(ugemerr, "%d: bad request path\n", request.trace);
     status = UGEM_FAIL_BAD_REQUEST;
+    ugem_write_status(connection, &request, status, "Invalid path", -1);
     goto fail;
   }
+
+  ugem_path_join(path_buf, hostcfg->root_path, uri.path, UGEM_PATH_SEP,
+                 UGEM_PATH_MAX);
+
+  if (access(path_buf, R_OK) != 0) {
+    ugem_log(ugemerr, "%d: access denied\n", request.trace);
+    status = UGEM_FAIL_BAD_REQUEST;
+    ugem_write_status(connection, &request, status, "Access denied", -1);
+    goto fail;
+  }
+
+  // TODO: allow overrides for paths here based on patterns
+  // default rule:
+  // access file system, attempt to read file, if file is a directory
+  // read index and return it
+  // otherwise read file and return its contents
 
 fail:
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
@@ -197,7 +245,7 @@ int ugem_main(struct ugem_config cfg) {
 
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
     ugem_log(ugemerr, "Listening on port %d for host: %s\n", ugemcfg.port,
-            ugemcfg.hostcfg.host);
+             ugemcfg.hostcfg.host);
   }
 
   char buf[UGEM_NET_BUF_MAX];
@@ -233,20 +281,37 @@ int ugem_main(struct ugem_config cfg) {
       goto disconnect;
     }
 
-    const char *test =
-        "20 text/gemini\r\n# Hello world\r\nThis is a test message!\r\n";
-
     struct ugem_request request = {.payload = buf,
                                    .payload_len = read,
                                    .src_addr = saddr,
                                    .src_port = addr.sin_port,
                                    .trace = trace};
-    ugem_handle(connection, request, &ugemcfg.hostcfg);
 
-    if (ugem_net_secure_write(connection, test, strlen(test)) <= 0) {
+    if (read < strlen(UGEM_GEMINI_LF)) {
+      ugem_log(ugemerr,
+               "Bad request. The request cannot be a valid gemini request!");
+      ugem_write_status(connection, &request, UGEM_FAIL_BAD_REQUEST, "", -1);
+      goto disconnect;
+    }
+    // remove crlf
+    char *crlf = strstr(buf, UGEM_GEMINI_LF);
+    if (crlf) {
+      read -= (long)strlen(crlf);
+      request.payload_len = read;
+      crlf[0] = '\0';
+    } else {
+      ugem_write_status(connection, &request, UGEM_FAIL_BAD_REQUEST, "", -1);
+      goto disconnect;
+    }
+
+    const char *test =
+        "20 text/gemini\r\n# Hello world\r\nThis is a test message!\r\n";
+
+    /*if (ugem_net_secure_write(connection, test, strlen(test)) <= 0) {
       ugem_log(ugemerr, "%s:%d : Write failed!\n", request.src_addr,
               request.src_port);
-    }
+    }*/
+    ugem_handle(connection, request, &ugemcfg.hostcfg);
 
   disconnect:
 
