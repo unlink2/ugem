@@ -340,6 +340,8 @@ int ugem_main(struct ugem_config cfg) {
   unsigned long buf_len = UGEM_NET_BUF_MAX;
 
   while (ugem.server_listening) {
+    memset(buf, 0, UGEM_NET_BUF_MAX);
+
     struct sockaddr_in addr;
     unsigned int addr_len = 0;
     int client_fd = accept(ugem.server_fd, (struct sockaddr *)&addr, &addr_len);
