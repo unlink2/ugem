@@ -112,11 +112,17 @@ void ugem_print_payload(FILE *f, const char *buf, long read) {
   }
 }
 
-// checks if path can be used
-// or if it at any point contains .. that
-// maye lead to escaping the root directory
+// FIXME: this is likely no good for windows as of now! (e.g. need to check
+// <dirve letter> and
+//        backslash variations for parent directory
 int ugem_is_path_valid(const char *path, unsigned long n) {
-  return strstr(path, "../") == NULL; 
+  return n == 0 || (path[0] != '/' && !strstr(path, "../") &&
+                    (n < 3 || strncmp(path + n - 3, "/..", 3) != 0));
+}
+
+int ugem_path_join(char *dst, const char *p1, const char *p2, char sep,
+                   unsigned long n) {
+  return snprintf(dst, n, "%s%c%s", p1, sep, p2);
 }
 
 enum ugem_status ugem_handle(void *connection, struct ugem_request request,
@@ -168,8 +174,8 @@ int ugem_main(struct ugem_config cfg) {
             ugemcfg.hostcfg.host);
   }
 
-  char buf[4096];
-  unsigned long buf_len = 4096;
+  char buf[UGEM_NET_BUF_MAX];
+  unsigned long buf_len = UGEM_NET_BUF_MAX;
 
   while (ugem.server_listening) {
     struct sockaddr_in addr;

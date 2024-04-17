@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <sys/socket.h>
 
+#define UGEM_PATH_MAX 1024
+#define UGEM_NET_BUF_MAX 2048
+#define UGEM_PATH_SEP '/'
+
 #define UGEM_ENV_KEY "UGEM_KEY"
 #define UGEM_ENV_CERT "URGME_CERT"
 #define UGEM_ENV_ROOT_DIR "UGEM_ROOT_DIR"
@@ -97,7 +101,17 @@ extern struct ugem_config ugemcfg;
 
 void ugem_init(struct ugem_config cfg);
 void ugem_print_payload(FILE *f, const char *buf, long read);
+
+// checks if path can be used
+// according to the following rules:
+// a path may not start with /
+// a path may not contain ../
+// a path may not end in /..
 int ugem_is_path_valid(const char *path, unsigned long n);
+
+// joins 2 paths into dst. 
+// dst must be n bytest long 
+int ugem_path_join(char *dst, const char *p1, const char *p2, char sep, unsigned long n);
 
 struct ugem_config ugem_cfg_init(void);
 

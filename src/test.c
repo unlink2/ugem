@@ -218,7 +218,7 @@ void uri_parse(void) {
 }
 
 #define assert_path_valid(expect, p) {\
-  int res = ugem_is_path_valid((p),  strlen(p)) == (expect);\
+  int res = ugem_is_path_valid((p),  strlen(p));\
   printf("%s: expected %d got %d\n", (p), (expect), res); \
   assert(res == (expect)); \
 }
@@ -226,14 +226,24 @@ void uri_parse(void) {
 void validate_path(void) {
   TESTBEGIN("validate path")
     
+  // valid
+  assert_path_valid(1, "");
+  assert_path_valid(1, ".");
+  assert_path_valid(1, "./");
   assert_path_valid(1, "test/path/that/is/valid");
   assert_path_valid(1, "test/path/that/.is/valid");
   assert_path_valid(1, ".test/path/that/is/valid");
   assert_path_valid(1, "test/path/that/is/valid.");
   assert_path_valid(1, "test/path/that/is/..valid");
-  assert_path_valid(0, "../test/path/that/is/valid");
 
-  assert_path_valid(0, "/test/path/that/is/valid/..");
+  // invalid 
+  assert_path_valid(0, "/");
+  assert_path_valid(0, "../");
+  assert_path_valid(0, "/..");
+  assert_path_valid(0, "../test/path/that/is/invalid");
+  assert_path_valid(0, "test/path/that/is/invalid/../");
+  assert_path_valid(0, "test/path/that/is/invalid/..");
+  assert_path_valid(0, "/test/path/that/is/invalid");
 
   TESTEND("validate path");
 }
