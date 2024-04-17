@@ -127,7 +127,8 @@ void ugem_print_payload(FILE *f, const char *buf, long read) {
 // <dirve letter> and
 //        backslash variations for parent directory
 int ugem_is_path_valid(const char *path, unsigned long n) {
-  return n == 0 || (path[0] != '/' && !strstr(path, "../") && strncmp("..", path, 2) != 0 &&
+  return n == 0 || (path[0] != '/' && !strstr(path, "../") &&
+                    strncmp("..", path, 2) != 0 &&
                     (n < 3 || strncmp(path + n - 3, "/..", 3) != 0));
 }
 
@@ -188,10 +189,10 @@ enum ugem_status ugem_handle_dirindex(void *connection,
   unsigned long path_len = strlen(uri->path);
 
   if (path_len == 0) {
-  ugem_net_secure_write(connection, index, strlen(index));
+    ugem_net_secure_write(connection, index, strlen(index));
   } else {
-  ugem_net_secure_write(connection, index_of, strlen(index_of));
-  ugem_net_secure_write(connection, uri->path, path_len);
+    ugem_net_secure_write(connection, index_of, strlen(index_of));
+    ugem_net_secure_write(connection, uri->path, path_len);
   }
   ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF));
 
@@ -231,11 +232,11 @@ enum ugem_status ugem_handle_file(void *connection,
     ugem_write_status(connection, request, status, "Not found", -1);
     return status;
   }
-  
-  // TODO: guess mime type here 
+
+  // TODO: guess mime type here
   ugem_write_status(connection, request, status, UGEM_TEXT_GEMINI, -1);
   while ((read = fread(buf, 1, UGEM_NET_BUF_MAX, f)) > 0) {
-      ugem_net_secure_write(connection, buf, read);
+    ugem_net_secure_write(connection, buf, read);
   }
 
   fclose(f);
@@ -277,8 +278,8 @@ enum ugem_status ugem_handle(void *connection, struct ugem_request request,
 
   if (access(path_buf, R_OK) != 0) {
     ugem_log(ugemerr, "%d: access denied\n", request.trace);
-    status = UGEM_FAIL_BAD_REQUEST;
-    ugem_write_status(connection, &request, status, "Access denied", -1);
+    status = UGEM_FAIL_NOT_FOUND;
+    ugem_write_status(connection, &request, status, "Not found", -1);
     goto fail;
   }
 
@@ -331,8 +332,8 @@ int ugem_main(struct ugem_config cfg) {
   }
 
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    ugem_log(ugemerr, "Listening on port %d for host: %s serving %s\n", ugemcfg.port,
-             ugemcfg.hostcfg.host, ugemcfg.hostcfg.root_path);
+    ugem_log(ugemerr, "Listening on port %d for host: %s serving %s\n",
+             ugemcfg.port, ugemcfg.hostcfg.host, ugemcfg.hostcfg.root_path);
   }
 
   char buf[UGEM_NET_BUF_MAX];
