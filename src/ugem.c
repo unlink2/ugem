@@ -155,13 +155,86 @@ void ugem_write_status(void *connection, struct ugem_request *request,
 
   if (ugem_net_secure_write(connection, status_buf, status_buf_len) <= 0 ||
       ugem_net_secure_write(connection, meta, meta_len) <= 0 ||
-      ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF)) <= 0) {
+      ugem_net_secure_write(connection, UGEM_GEMINI_LF,
+                            strlen(UGEM_GEMINI_LF)) <= 0) {
     ugem_log(ugemerr, "%d: %s:%d : Write failed!\n", request->trace,
              request->src_addr, request->src_port);
   } else {
     ugem_log(ugemerr, "%d wrote header: %s%s\n", request->trace, status_buf,
              meta);
   }
+}
+
+enum ugem_status ugem_handle_dirindex(void *connection,
+                                      struct ugem_request *request,
+                                      struct ugem_host_config *hostcfg,
+                                      struct ugem_uri *uri, char *path) {
+  enum ugem_status status = UGEM_SUCCESS;
+  char path_buf[UGEM_PATH_MAX] = {0};
+
+  DIR *dp = NULL;
+  struct dirent *ep = NULL;
+  dp = opendir(path);
+  if (dp == NULL) {
+    status = UGEM_FAIL_NOT_FOUND;
+    ugem_write_status(connection, request, status, "Not found", -1);
+    return status;
+  }
+
+  ugem_write_status(connection, request, status, UGEM_TEXT_GEMINI, -1);
+
+  const char *index_of = "# Index of ";
+
+  ugem_net_secure_write(connection, index_of, strlen(index_of));
+  ugem_net_secure_write(connection, uri->path, strlen(uri->path));
+  ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF));
+
+  while ((ep = readdir(dp)) != NULL) {
+    if (strcmp(ep->d_name, ".") == 0 || strcmp(ep->d_name, "..") == 0) {
+      continue;
+    }
+
+    if (ep->d_name[0] != '.' || hostcfg->all) {
+      ugem_path_join(path_buf, uri->path, ep->d_name, UGEM_PATH_SEP,
+                     UGEM_PATH_MAX);
+      ugem_net_secure_write(connection, "=> ", strlen("=> "));
+      ugem_net_secure_write(connection, path_buf, strlen(path_buf));
+      ugem_net_secure_write(connection, " ", strlen(" "));
+      ugem_net_secure_write(connection, ep->d_name, strlen(ep->d_name));
+      ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF));
+    }
+  }
+
+  closedir(dp);
+
+  return status;
+}
+
+enum ugem_status ugem_handle_file(void *connection,
+                                  struct ugem_request *request,
+                                  struct ugem_host_config *hostcfg,
+                                  struct ugem_uri *uri, char *path) {
+  enum ugem_status status = UGEM_SUCCESS;
+  char buf[UGEM_NET_BUF_MAX];
+  unsigned long read = 0;
+
+  FILE *f = fopen(path, "re");
+
+  if (f == NULL) {
+    status = UGEM_FAIL_NOT_FOUND;
+    ugem_write_status(connection, request, status, "Not found", -1);
+    return status;
+  }
+  
+  // TODO: guess mime type here 
+  ugem_write_status(connection, request, status, UGEM_TEXT_GEMINI, -1);
+  while ((read = fread(buf, 1, UGEM_NET_BUF_MAX, f)) > 0) {
+      ugem_net_secure_write(connection, buf, read);
+  }
+
+  fclose(f);
+
+  return status;
 }
 
 enum ugem_status ugem_handle(void *connection, struct ugem_request request,
@@ -208,6 +281,14 @@ enum ugem_status ugem_handle(void *connection, struct ugem_request request,
   // access file system, attempt to read file, if file is a directory
   // read index and return it
   // otherwise read file and return its contents
+  if (ugem_isdir(path_buf)) {
+    // directory index
+    status =
+        ugem_handle_dirindex(connection, &request, hostcfg, &uri, path_buf);
+  } else {
+    // serve file
+    status = ugem_handle_file(connection, &request, hostcfg, &uri, path_buf);
+  }
 
 fail:
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
@@ -304,13 +385,6 @@ int ugem_main(struct ugem_config cfg) {
       goto disconnect;
     }
 
-    const char *test =
-        "20 text/gemini\r\n# Hello world\r\nThis is a test message!\r\n";
-
-    /*if (ugem_net_secure_write(connection, test, strlen(test)) <= 0) {
-      ugem_log(ugemerr, "%s:%d : Write failed!\n", request.src_addr,
-              request.src_port);
-    }*/
     ugem_handle(connection, request, &ugemcfg.hostcfg);
 
   disconnect:

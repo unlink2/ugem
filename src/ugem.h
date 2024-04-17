@@ -18,6 +18,8 @@
 #define UGEM_DEFAULT_CERT "./server.cert"
 #define UGEM_DEFAULT_ROOT_DIR "."
 
+#define UGEM_TEXT_GEMINI "text/gemini"
+
 #define UGEM_DEFAULT_PORT 1965;
 #define UGEM_DEFAULT_SA_FAMILY AF_INET
 
@@ -62,6 +64,7 @@ struct ugem {
 struct ugem_host_config {
   const char *root_path;
   const char *host;
+  int all;
 };
 
 struct ugem_request {

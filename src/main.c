@@ -7,7 +7,7 @@
 #define UGEM_VER "0.0.1"
 
 // args without value
-#define UGEM_OPTS "hvV46"
+#define UGEM_OPTS "hvV46Ha"
 
 // args with value e.g. o:
 #define UGEM_OPTS_ARG ""
@@ -20,6 +20,7 @@ void ugem_help(void) {
   UGEM_HELP("h", "display this help and exit");
   UGEM_HELP("V", "display version info and exit");
   UGEM_HELP("H", "Set accepted host");
+  UGEM_HELP("a", "Show all files in directory index");
   UGEM_HELP("v", "increase log level");
   UGEM_HELP("4", "Use IPv4");
   UGEM_HELP("6", "Use IPv6");
@@ -41,6 +42,10 @@ void ugem_getopt(int argc, char **argv, struct ugem_config *cfg) {
       break;
     case 'H':
       cfg->hostcfg.host = optarg;
+      break;
+    case 'a':
+      cfg->hostcfg.all = 1;
+      break;
     case 'v':
       cfg->verbose++;
       break;
