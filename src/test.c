@@ -217,15 +217,16 @@ void uri_parse(void) {
   TESTEND("uri parse");
 }
 
-#define assert_path_valid(expect, p) {\
-  int res = ugem_is_path_valid((p),  strlen(p));\
-  printf("%s: expected %d got %d\n", (p), (expect), res); \
-  assert(res == (expect)); \
-}
+#define assert_path_valid(expect, p)                                           \
+  {                                                                            \
+    int res = ugem_is_path_valid((p), strlen(p));                              \
+    printf("%s: expected %d got %d\n", (p), (expect), res);                    \
+    assert(res == (expect));                                                   \
+  }
 
 void validate_path(void) {
   TESTBEGIN("validate path")
-    
+
   // valid
   assert_path_valid(1, "");
   assert_path_valid(1, ".");
@@ -236,7 +237,7 @@ void validate_path(void) {
   assert_path_valid(1, "test/path/that/is/valid.");
   assert_path_valid(1, "test/path/that/is/..valid");
 
-  // invalid 
+  // invalid
   assert_path_valid(0, "/");
   assert_path_valid(0, "../");
   assert_path_valid(0, "/..");
@@ -246,6 +247,27 @@ void validate_path(void) {
   assert_path_valid(0, "/test/path/that/is/invalid");
 
   TESTEND("validate path");
+}
+
+#define assert_path_join(expect, p1, p2, sep)                                  \
+  {                                                                            \
+    char buf[512];                                                             \
+    buf[0] = '\0';                                                             \
+    int len = 512;                                                             \
+    ugem_path_join(buf, (p1), (p2), (sep), len);                               \
+    printf("joining '%s' and '%s' with '%c'. expected '%s' got '%s'\n", (p1),  \
+           (p2), (sep), (expect), buf);                                        \
+    assert(strcmp(expect, buf) == 0);                                          \
+  }
+
+void path_join(void) {
+  const char s = '/';
+  TESTBEGIN("path join");
+
+  assert_path_join("/", "", "", s);
+  assert_path_join("test/123", "test", "123", s);
+
+  TESTEND("path end");
 }
 
 int main(int arc, char **argv) {
@@ -258,6 +280,7 @@ int main(int arc, char **argv) {
   tok_until();
   uri_parse();
   validate_path();
+  path_join();
 
   TESTEND("ugem");
 
