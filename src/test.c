@@ -240,6 +240,7 @@ void validate_path(void) {
   // invalid
   assert_path_valid(0, "/");
   assert_path_valid(0, "../");
+  assert_path_valid(0, "..");
   assert_path_valid(0, "/..");
   assert_path_valid(0, "../test/path/that/is/invalid");
   assert_path_valid(0, "test/path/that/is/invalid/../");

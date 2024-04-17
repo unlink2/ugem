@@ -127,7 +127,7 @@ void ugem_print_payload(FILE *f, const char *buf, long read) {
 // <dirve letter> and
 //        backslash variations for parent directory
 int ugem_is_path_valid(const char *path, unsigned long n) {
-  return n == 0 || (path[0] != '/' && !strstr(path, "../") &&
+  return n == 0 || (path[0] != '/' && !strstr(path, "../") && strncmp("..", path, 2) != 0 &&
                     (n < 3 || strncmp(path + n - 3, "/..", 3) != 0));
 }
 
