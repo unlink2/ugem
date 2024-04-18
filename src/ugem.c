@@ -207,7 +207,12 @@ enum ugem_status ugem_handle_dirindex(void *connection,
       ugem_net_secure_write(connection, "=> ", strlen("=> "));
       ugem_net_secure_write(connection, path_buf, strlen(path_buf));
       ugem_net_secure_write(connection, " ", strlen(" "));
+
       ugem_net_secure_write(connection, ep->d_name, strlen(ep->d_name));
+      if (ep->d_type == DT_DIR) {
+        ugem_net_secure_write(connection, "/", strlen("/"));
+      }
+
       ugem_net_secure_write(connection, UGEM_GEMINI_LF, strlen(UGEM_GEMINI_LF));
     }
   }
