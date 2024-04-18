@@ -325,7 +325,7 @@ int ugem_main(struct ugem_config cfg) {
     return -1;
   }
 
-  ugem.server_fd = ugem_net_server_socket_init(cfg.port, cfg.sa_family);
+  ugem.server_fd = ugem_net_server_socket_init(cfg.bind_addr, cfg.port, cfg.sa_family);
 
   if (ugem.server_fd < 0) {
     return -1;
@@ -337,8 +337,8 @@ int ugem_main(struct ugem_config cfg) {
   }
 
   if (UGEM_SHOULD_LOG(UGEM_INFO)) {
-    ugem_log(ugemerr, "Listening on port %d for host: %s serving %s\n",
-             ugemcfg.port, ugemcfg.hostcfg.host, ugemcfg.hostcfg.root_path);
+    ugem_log(ugemerr, "Listening on port %s:%d for host: %s serving %s\n",
+             ugemcfg.bind_addr, ugemcfg.port, ugemcfg.hostcfg.host, ugemcfg.hostcfg.root_path);
   }
 
   char buf[UGEM_NET_BUF_MAX];

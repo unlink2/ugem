@@ -111,6 +111,7 @@ struct ugem_config {
   const char *cert_path;
 
   struct ugem_host_config hostcfg;
+  const char *bind_addr;
 
   int port;
   sa_family_t sa_family;

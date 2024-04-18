@@ -3,7 +3,7 @@
 
 #include <arpa/inet.h>
 
-int ugem_net_server_socket_init(int port, sa_family_t family);
+int ugem_net_server_socket_init(const char *bind_addr, int port, sa_family_t family);
 void ugem_net_socket_close(int socket);
 
 // init a secure connection and return

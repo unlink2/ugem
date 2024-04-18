@@ -7,12 +7,45 @@
 #include "ugem.h"
 #include <fcntl.h>
 
-int ugem_net_server_socket_init(int port, sa_family_t family) {
+int ugem_net_server_socket_init(const char *bind_addr, int port,
+                                sa_family_t family) {
   int s = -1;
-  struct sockaddr_in addr;
-  addr.sin_family = family;
-  addr.sin_port = htons(port);
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  struct sockaddr *addr = NULL;
+  struct sockaddr_in addr4;
+  struct sockaddr_in6 addr6;
+
+  unsigned long addr_len = 0;
+
+  switch (family) {
+  case AF_INET:
+    addr4.sin_family = family;
+    addr4.sin_port = htons(port);
+    if (ugemcfg.bind_addr) {
+      inet_pton(AF_INET, ugemcfg.bind_addr, &(addr4.sin_addr));
+    } else {
+      addr4.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+    addr = (struct sockaddr *)&addr4;
+    addr_len = sizeof(addr4);
+    break;
+  case AF_INET6:
+    addr6.sin6_family = family;
+    addr6.sin6_port = htons(port);
+    addr6.sin6_flowinfo = 0;
+
+    if (ugemcfg.bind_addr) {
+      inet_pton(AF_INET, ugemcfg.bind_addr, &(addr6.sin6_addr));
+    } else {
+      addr6.sin6_addr = in6addr_loopback;
+    }
+
+    addr = (struct sockaddr *)&addr6;
+    addr_len = sizeof(addr6);
+    break;
+  default:
+    fprintf(ugemerr, "Unsupported address family\n");
+    return -1;
+  }
 
   s = socket(family, SOCK_STREAM, 0);
   int option = 1;
@@ -24,7 +57,7 @@ int ugem_net_server_socket_init(int port, sa_family_t family) {
     return -1;
   }
 
-  if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+  if (bind(s, (struct sockaddr *)addr, addr_len) < 0) {
     fprintf(ugemerr, "Unable to bind socket on port %d: %s\n", port,
             strerror(errno));
     return -1;
